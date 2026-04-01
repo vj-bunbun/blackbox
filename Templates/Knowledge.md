@@ -1,6 +1,8 @@
 ---
 title: 
 domain: 
+type:           # architecture | decision | reference | log | guide | preference
+priority:       # high | medium | low
 tags: []
 created: 
 updated: 

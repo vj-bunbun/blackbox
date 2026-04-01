@@ -11,6 +11,8 @@ import { readFileSync, writeFileSync } from 'fs';
 export interface KnowledgeFrontmatter {
   title: string;
   domain?: string;
+  type?: 'architecture' | 'decision' | 'reference' | 'log' | 'guide' | 'preference';
+  priority?: 'high' | 'medium' | 'low';
   tags?: string[];
   created?: string;
   updated?: string;

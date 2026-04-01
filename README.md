@@ -112,7 +112,9 @@ Every file looks like this:
 ---
 title: Project Architecture
 domain: my-project
-tags: [architecture, decisions]
+type: architecture
+priority: high
+tags: [architecture, system-design]
 created: 2026-04-01
 updated: 2026-04-01
 status: active
@@ -120,6 +122,8 @@ status: active
 
 The app uses a three-layer architecture with caching at the edge...
 ```
+
+**Type** controls how foundational a file is — `architecture` and `decision` files always outrank `log` and `reference` files. **Priority** gives you explicit control — `high` files surface first, `low` files only fill remaining budget.
 
 ## Why Not Just Use [Provider]'s Memory?
 

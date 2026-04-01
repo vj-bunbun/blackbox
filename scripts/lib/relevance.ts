@@ -186,6 +186,25 @@ export function scoreFile(
   if (data.status === 'archived' && !opts.includeArchived) return -1;
   if (data.status === 'superseded') return -1;
 
+  // Priority boost — explicit user control over what matters
+  // high = always near the top, low = only included if budget allows
+  if (data.priority === 'high') score += 40;
+  else if (data.priority === 'low') score -= 20;
+  // medium (or unset) = no adjustment
+
+  // Type boost — foundational knowledge outranks granular logs
+  const typeScores: Record<string, number> = {
+    architecture: 30,   // How things work — always valuable
+    decision: 25,       // Why things are the way they are
+    guide: 20,          // How to do things
+    preference: 15,     // Included via domain scoring too, small extra bump
+    reference: 0,       // Neutral — scored by domain instead
+    log: -15,           // Test logs, prompt logs — low value for context
+  };
+  if (data.type && data.type in typeScores) {
+    score += typeScores[data.type];
+  }
+
   // Base score by domain type
   if (data.domain === 'preferences') {
     score += 100;  // Always include preferences
