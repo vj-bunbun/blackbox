@@ -20,23 +20,15 @@ git clone https://github.com/vj-bunbun/blackbox.git ~/Documents/blackbox
 cd ~/Documents/blackbox/scripts && bun install
 ```
 
-### 2. Create your vault
-
-Your vault is where your personal knowledge lives. It can be anywhere on disk.
+### 2. Initialize your vault
 
 ```bash
-mkdir ~/Documents/my-vault
+bun run init.ts ~/Documents/my-vault
 ```
 
-### 3. Set a default vault
+This creates the vault structure, a starter preferences file, and sets it as your default in `~/.airc`. Edit `~/Documents/my-vault/preferences/about-me.md` to tell any AI who you are and how you work.
 
-Create `~/.airc` so scripts know where to look:
-
-```
-defaultVault=~/Documents/my-vault
-```
-
-### 4. Start your first session
+### 3. Start your first session
 
 ```bash
 bun run session.ts start "getting set up"

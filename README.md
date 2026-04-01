@@ -10,28 +10,16 @@ No accounts. No telemetry. No lock-in. Just files you own.
 
 ## How It Works
 
-```bash
-# Assemble your knowledge into a context document
-bun run context.ts --clipboard
-
-# Paste into any AI conversation — it now knows everything you've taught it
-```
-
-That's it. Blackbox reads your vault, scores files by relevance, fits them within a token budget, and copies the result to your clipboard. Paste it into any AI and pick up where you left off.
-
-### The Full Lifecycle
+You don't start by writing knowledge files. You start by working.
 
 ```
- You work with AI ──→ Session captures what happened
-                              │
-                    Consolidation promotes learnings
-                              │
-                    Knowledge base grows over time
-                              │
-                    Context assembly picks what's relevant
-                              │
-                    Paste into ANY AI ──→ It knows your stuff
+ Day 1:  Start sessions, log what matters as you work
+ Day 7:  Consolidation promotes learnings to knowledge
+ Day 8:  Context assembly picks what's relevant
+         Paste into ANY AI → it knows your stuff
 ```
+
+Your vault builds itself from your sessions. The more you use it, the smarter the context gets — problems you keep hitting float to the top.
 
 ## Quick Start
 
@@ -40,21 +28,28 @@ That's it. Blackbox reads your vault, scores files by relevance, fits them withi
 git clone https://github.com/vj-bunbun/blackbox.git
 cd blackbox/scripts && bun install
 
-# Set your vault location
-echo "defaultVault=~/Documents/my-vault" > ~/.airc
-mkdir ~/Documents/my-vault
+# Initialize your vault (creates structure + sets as default)
+bun run init.ts ~/Documents/my-vault
 
-# Start a work session
-bun run session.ts start "my first project"
+# Edit the starter file — tell AI who you are
+# (open ~/Documents/my-vault/preferences/about-me.md)
 
-# Log what you learn
+# Start working
+bun run session.ts start "what I'm working on"
+
+# Log insights as you go
 bun run session.ts log "learned how the caching layer works"
+bun run session.ts log "found a bug in the retry logic"
 
-# Close the session
+# Done for the day
 bun run session.ts close
 
-# Assemble context for any AI
+# After a few sessions, promote learnings to knowledge
+bun run consolidate.ts --execute
+
+# Before any AI conversation, grab your context
 bun run context.ts --clipboard
+# Paste into any AI — it knows where you left off
 ```
 
 ## What's In the Box

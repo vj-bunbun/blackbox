@@ -6,6 +6,7 @@
   "repository": "https://github.com/vj-bunbun/blackbox",
   "type": "module",
   "scripts": {
+    "init": "bun run init.ts",
     "context": "bun run context.ts",
     "session": "bun run session.ts",
     "consolidate": "bun run consolidate.ts",

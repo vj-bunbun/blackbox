@@ -16,6 +16,16 @@ All scripts will use this vault unless you pass `--vault` explicitly.
 
 ## Script Flags
 
+### `init.ts`
+
+| Argument | Description |
+|----------|-------------|
+| `[path]` | Where to create the vault (default: `./vault`) |
+
+| Flag | Description |
+|------|-------------|
+| `--no-default` | Don't set this vault as default in `~/.airc` |
+
 ### `context.ts`
 
 | Flag | Description |
