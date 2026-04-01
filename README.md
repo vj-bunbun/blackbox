@@ -28,7 +28,8 @@ Your vault builds itself from your sessions. The more you use it, the smarter th
 git clone https://github.com/vj-bunbun/blackbox.git
 cd blackbox/scripts && bun install
 
-# Initialize your vault (creates structure + sets as default)
+# Initialize your vault (creates structure + sets it as default in ~/.airc)
+# All scripts will read from this vault unless you pass --vault explicitly
 bun run init.ts ~/Documents/my-vault
 
 # Edit the starter file — tell AI who you are
@@ -55,10 +56,11 @@ bun run context.ts --clipboard
 ## What's In the Box
 
 ### `context.ts` — The core value
-Reads your vault, scores relevance, assembles context within a token budget. Supports per-provider token counting (Anthropic, OpenAI, Google, local models).
+Reads your default vault (set by `init.ts` in `~/.airc`), scores relevance, assembles context within a token budget. Use `--vault` to target a different vault.
 
 ```bash
-bun run context.ts                          # everything relevant
+bun run context.ts                          # reads from default vault
+bun run context.ts --vault ~/other-vault    # reads from a specific vault
 bun run context.ts --domain myproject       # filter by project
 bun run context.ts --tags api,auth          # filter by topic
 bun run context.ts --budget 4000            # tight context window
@@ -136,6 +138,46 @@ The app uses a three-layer architecture with caching at the edge...
 | See what AI "knows" | Read the files | Black box (ironic) |
 | Data ownership | 100% yours | Read the ToS |
 | Cost | Free forever | Bundled into subscription |
+
+## Integrations
+
+### How the scripts find your vault
+
+1. `--vault ~/path` flag (explicit, highest priority)
+2. `~/.airc` default (set automatically by `init.ts`)
+3. Current directory (fallback)
+
+You set up your vault once with `init.ts`. After that, all scripts just work — no paths needed.
+
+### Multiple projects
+
+Keep a separate vault per project. Pass `--vault` to target each one:
+
+```bash
+bun run context.ts --vault ~/vaults/project-a --clipboard
+bun run context.ts --vault ~/vaults/project-b --output ~/project-b/CLAUDE.md
+```
+
+### Auto-load context into AI tools
+
+Instead of copying to clipboard every time, write context directly to a file your AI tool reads:
+
+```bash
+# Claude Code — writes to CLAUDE.md in your project root
+bun run context.ts --output ~/my-project/CLAUDE.md
+
+# Any tool that reads a context file — same idea
+bun run context.ts --output ~/my-project/.ai-context.md
+```
+
+Every new conversation automatically has your vault context. Re-run whenever your knowledge updates.
+
+### Clipboard (manual paste)
+
+```bash
+bun run context.ts --clipboard
+# Paste into any AI chat
+```
 
 ## Design Principles
 

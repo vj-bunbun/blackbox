@@ -97,6 +97,40 @@ function frequencyBoost(
   return Math.min(30, Math.round(matchScore * 2));
 }
 
+// ── Task-based scoring ────────────────────────────────────────────
+
+/**
+ * Score how well a knowledge file matches a task description.
+ * Breaks the task into keywords and matches against title, tags, and content.
+ * Returns a boost value (0-50).
+ */
+export function taskBoost(
+  data: KnowledgeFrontmatter,
+  content: string,
+  task: string
+): number {
+  const taskWords = task
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+
+  if (taskWords.length === 0) return 0;
+
+  // Build searchable text from the file
+  const fileText = `${data.title || ''} ${(data.tags || []).join(' ')} ${content}`
+    .toLowerCase();
+
+  let matches = 0;
+  for (const word of taskWords) {
+    if (fileText.includes(word)) matches++;
+  }
+
+  // Score: percentage of task words found in the file, scaled to 50 max
+  const matchRatio = matches / taskWords.length;
+  return Math.round(matchRatio * 50);
+}
+
 // ── Last session ──────────────────────────────────────────────────
 
 /**

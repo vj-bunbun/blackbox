@@ -16,7 +16,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { resolveVault, discoverKnowledgeFiles, vaultPaths, findOpenSession } from './lib/vault.js';
 import { parseFile, type KnowledgeFrontmatter } from './lib/frontmatter.js';
-import { scoreFile, rankFiles, buildFrequencyMap, getLastSession, type ScoredFile } from './lib/relevance.js';
+import { scoreFile, rankFiles, buildFrequencyMap, getLastSession, taskBoost, type ScoredFile } from './lib/relevance.js';
 import { estimateTokens, getDefaultBudget, truncateToFit, type Provider } from './lib/tokens.js';
 
 // ── CLI ────────────────────────────────────────────────────────────
@@ -29,6 +29,8 @@ const program = new Command()
   .option('--tags <tags>', 'Filter by tags (comma-separated)')
   .option('--budget <tokens>', 'Token budget (default: provider-dependent)')
   .option('--provider <name>', 'Provider: default, anthropic, openai, google, local')
+  .option('--task <description>', 'What you are about to work on (boosts relevant files)')
+  .option('--top <n>', 'Only include the top N files (default: all that fit budget)')
   .option('--clipboard', 'Copy to clipboard instead of writing file')
   .option('--output <path>', 'Output file path')
   .option('--session', 'Include current open session notes')
@@ -41,6 +43,8 @@ const provider = (opts.provider || 'default') as Provider;
 const budget = parseInt(opts.budget) || getDefaultBudget(provider);
 const domain = opts.domain;
 const tags = opts.tags ? opts.tags.split(',').map((t: string) => t.trim()) : undefined;
+const task = opts.task;
+const topN = opts.top ? parseInt(opts.top, 10) : undefined;
 const quiet = opts.quiet;
 
 if (!existsSync(vaultRoot)) {
@@ -53,6 +57,8 @@ if (!quiet) {
   console.log(`  Provider: ${provider} | Budget: ${budget} tokens`);
   if (domain) console.log(`  Domain filter: ${domain}`);
   if (tags) console.log(`  Tag filter: ${tags.join(', ')}`);
+  if (task) console.log(`  Task: ${task}`);
+  if (topN) console.log(`  Top: ${topN} files`);
 }
 
 // ── Discover and score files ───────────────────────────────────────
@@ -66,7 +72,8 @@ const scored: ScoredFile[] = [];
 for (const file of files) {
   try {
     const parsed = parseFile(file.path);
-    const score = scoreFile(parsed.data, parsed.content, { domain, tags, frequencyMap });
+    let score = scoreFile(parsed.data, parsed.content, { domain, tags, frequencyMap });
+    if (task) score += taskBoost(parsed.data, parsed.content, task);
     scored.push({
       ...file,
       data: parsed.data,
@@ -78,7 +85,12 @@ for (const file of files) {
   }
 }
 
-const ranked = rankFiles(scored);
+let ranked = rankFiles(scored);
+
+// Apply --top cap: only keep the top N files
+if (topN && topN > 0) {
+  ranked = ranked.slice(0, topN);
+}
 
 if (!quiet) {
   console.log(`  Found ${files.length} files, ${ranked.length} scored relevant\n`);
