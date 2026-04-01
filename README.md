@@ -4,7 +4,7 @@
 
 AI providers are getting better at memory. Some let you view it, edit it, even export it if you dig. But your context still lives inside their black box — and the moment you switch providers, you're starting from zero.
 
-Blackbox flips that. Your AI memory lives as plain markdown files on your machine. Human-readable, human-editable, version-controlled. Any AI that can read files picks up where the last one left off.
+This Blackbox flips that. Your AI memory lives as plain markdown files on your machine. Human-readable, human-editable, version-controlled. Any AI that can read files picks up where the last one left off.
 
 No accounts. No telemetry. No lock-in. Just files you own.
 
