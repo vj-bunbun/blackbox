@@ -1,16 +1,12 @@
 # Blackbox
 
-**Your AI forgets everything between sessions. Blackbox fixes that.**
+**The problem is in the name.**
 
-A portable memory system that works with any AI — Claude, ChatGPT, Gemini, local models, whatever comes next. Your knowledge lives as plain markdown files on your machine. Switch providers without losing context. Go offline without losing anything.
+AI providers are getting better at memory. Some let you view it, edit it, even export it if you dig. But your context still lives inside their black box — and the moment you switch providers, you're starting from zero.
+
+Blackbox flips that. Your AI memory lives as plain markdown files on your machine. Human-readable, human-editable, version-controlled. Any AI that can read files picks up where the last one left off.
 
 No accounts. No telemetry. No lock-in. Just files you own.
-
-## The Problem
-
-Every AI assistant starts from zero every conversation. The ones that "remember" lock your data into their platform. Switch providers? Start over. Service goes down? Gone. Pricing changes? Tough luck.
-
-Your context is the most valuable part of working with AI. You should own it.
 
 ## How It Works
 
@@ -52,7 +48,7 @@ mkdir ~/Documents/my-vault
 bun run session.ts start "my first project"
 
 # Log what you learn
-bun run session.ts log "discovered the auth bug was in middleware"
+bun run session.ts log "learned how the caching layer works"
 
 # Close the session
 bun run session.ts close
@@ -78,8 +74,8 @@ bun run context.ts --provider openai        # provider-specific tokens
 Structured session notes with goals, decisions, errors, and learnings.
 
 ```bash
-bun run session.ts start "fixing the auth bug"
-bun run session.ts log "root cause: expired JWT validation"
+bun run session.ts start "refactoring the data layer"
+bun run session.ts log "found a cleaner pattern for caching"
 bun run session.ts close
 ```
 
@@ -119,15 +115,15 @@ Every file looks like this:
 
 ```markdown
 ---
-title: Auth Architecture
+title: Project Architecture
 domain: my-project
-tags: [auth, jwt, middleware]
+tags: [architecture, decisions]
 created: 2026-04-01
 updated: 2026-04-01
 status: active
 ---
 
-The auth system uses short-lived JWTs with refresh token rotation...
+The app uses a three-layer architecture with caching at the edge...
 ```
 
 ## Why Not Just Use [Provider]'s Memory?
@@ -136,7 +132,7 @@ The auth system uses short-lived JWTs with refresh token rotation...
 |---|---|---|
 | Switch AI providers | Keep everything | Start over |
 | Offline access | Always works | Depends on service |
-| Edit your memory | Open any text editor | Maybe a web UI |
+| Edit your memory | Open any text editor | Web UI (varies) |
 | Version control | Git, just works | Not available |
 | See what AI "knows" | Read the files | Black box (ironic) |
 | Data ownership | 100% yours | Read the ToS |
