@@ -92,6 +92,24 @@ bun run migrate.ts --source ~/.ai-tool/memory              # preview (dry-run)
 bun run migrate.ts --source ~/.ai-tool/memory --execute     # apply
 ```
 
+### `audit.ts` — Vault health check
+Scans for stale files, bloated content, missing frontmatter, empty sections, and token budget overruns.
+
+```bash
+bun run audit.ts                          # audit default vault
+bun run audit.ts --stale 60               # flag files not updated in 60+ days
+bun run audit.ts --budget 8000            # show what fits in 8000 tokens
+```
+
+### `tidy.ts` — Clean up noise
+Strips template placeholders, removes empty sections, collapses excess whitespace. Optionally archives stale files.
+
+```bash
+bun run tidy.ts                           # preview what would change
+bun run tidy.ts --execute                 # apply cleanup
+bun run tidy.ts --archive-stale 90        # also archive files >90 days old
+```
+
 ## Vault Structure
 
 Your knowledge lives as plain markdown with YAML frontmatter:
