@@ -1,0 +1,28 @@
+# Obsidian
+.obsidian/
+.trash/
+
+# Personal vaults (NEVER tracked)
+# ../my-vault/
+
+# Environment
+.env
+.env.local
+
+# Dependencies
+node_modules/
+scripts/node_modules/
+
+# Ephemeral context output
+Context/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Bun
+scripts/bun.lockb
+
+# R&D notes (private, never pushed)
+R&D/

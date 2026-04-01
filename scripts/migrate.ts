@@ -1,0 +1,243 @@
+#!/usr/bin/env bun
+/**
+ * migrate.ts — Migrate memory files from an AI tool's memory directory to a Blackbox vault.
+ *
+ * Usage:
+ *   bun run migrate.ts --source ~/path/to/ai-memory --vault ~/Documents/my-vault
+ *   bun run migrate.ts --source ~/path/to/ai-memory --vault ~/Documents/my-vault --execute
+ */
+
+import { Command } from 'commander';
+import { existsSync, readFileSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
+import { join, basename } from 'path';
+import matter from 'gray-matter';
+import { resolveVault, ensureDir } from './lib/vault.js';
+import { serializeFile, today, type KnowledgeFrontmatter } from './lib/frontmatter.js';
+
+// ── Migration mapping ──────────────────────────────────────────────
+
+interface MigrationRule {
+  destination: string;  // relative path in target vault (without .md)
+  domain?: string;
+  tags?: string[];
+}
+
+/**
+ * Define your migration mapping here.
+ * Keys = source filenames (without .md), values = where they land in the vault.
+ *
+ * Example:
+ *   'my-topic':         { destination: 'project/my-topic', domain: 'myproject', tags: ['api'] },
+ *   'coding-prefs':     { destination: 'preferences/coding-style', domain: 'preferences', tags: ['rules'] },
+ *   'competitor-notes': { destination: 'reference/competitors', domain: 'reference', tags: ['research'] },
+ */
+const MIGRATION_MAP: Record<string, MigrationRule> = {
+  // Add your own mappings here before running migrate.
+  // Each key is the source filename (without .md extension).
+  // Each value specifies where it lands in your vault.
+};
+
+// ── Migration logic ────────────────────────────────────────────────
+
+interface MigrationResult {
+  source: string;
+  destination: string;
+  status: 'migrated' | 'skipped' | 'error';
+  reason?: string;
+}
+
+function migrateFile(
+  sourcePath: string,
+  targetVault: string,
+  rule: MigrationRule,
+  dryRun: boolean
+): MigrationResult {
+  const destPath = join(targetVault, rule.destination + '.md');
+  const result: MigrationResult = {
+    source: basename(sourcePath),
+    destination: rule.destination + '.md',
+    status: 'migrated',
+  };
+
+  if (existsSync(destPath)) {
+    result.status = 'skipped';
+    result.reason = 'already exists';
+    return result;
+  }
+
+  try {
+    const raw = readFileSync(sourcePath, 'utf-8');
+    const { data: oldData, content } = matter(raw);
+
+    // Build new frontmatter
+    const newData: KnowledgeFrontmatter = {
+      title: oldData.name || oldData.title || rule.destination.split('/').pop() || '',
+      domain: rule.domain,
+      tags: rule.tags || [],
+      created: oldData.created || today(),
+      updated: today(),
+      status: 'active',
+    };
+
+    if (!dryRun) {
+      const destDir = join(targetVault, rule.destination.split('/').slice(0, -1).join('/'));
+      ensureDir(destDir);
+      const output = serializeFile(newData, content);
+      writeFileSync(destPath, output, 'utf-8');
+    }
+
+    return result;
+  } catch (err) {
+    result.status = 'error';
+    result.reason = String(err);
+    return result;
+  }
+}
+
+function migrateMemoryIndex(sourcePath: string, targetVault: string, dryRun: boolean): MigrationResult[] {
+  const results: MigrationResult[] = [];
+  const raw = readFileSync(sourcePath, 'utf-8');
+
+  // MEMORY.md (or similar index files) may contain both an index and embedded knowledge.
+  // We extract embedded sections into a knowledge file and create a clean INDEX.md.
+
+  const architectureContent: string[] = [];
+
+  for (const line of raw.split('\n')) {
+    const headerMatch = line.match(/^## (.+)/);
+    if (headerMatch) {
+      architectureContent.push(`\n## ${headerMatch[1].trim()}`);
+      continue;
+    }
+    architectureContent.push(line);
+  }
+
+  // Write extracted knowledge
+  if (architectureContent.length > 5) {
+    const archPath = join(targetVault, 'imported-knowledge.md');
+    const archResult: MigrationResult = {
+      source: 'MEMORY.md (embedded sections)',
+      destination: 'imported-knowledge.md',
+      status: 'migrated',
+    };
+
+    if (existsSync(archPath)) {
+      archResult.status = 'skipped';
+      archResult.reason = 'already exists';
+    } else if (!dryRun) {
+      const archData: KnowledgeFrontmatter = {
+        title: 'Imported Knowledge',
+        tags: ['imported', 'migration'],
+        created: today(),
+        updated: today(),
+        status: 'active',
+      };
+      writeFileSync(archPath, serializeFile(archData, architectureContent.join('\n')), 'utf-8');
+    }
+    results.push(archResult);
+  }
+
+  // Write INDEX.md
+  const indexPath = join(targetVault, 'INDEX.md');
+  const indexResult: MigrationResult = {
+    source: 'MEMORY.md (index entries)',
+    destination: 'INDEX.md',
+    status: 'migrated',
+  };
+
+  if (existsSync(indexPath)) {
+    indexResult.status = 'skipped';
+    indexResult.reason = 'already exists';
+  } else if (!dryRun) {
+    const lines = [
+      '# Knowledge Index\n',
+      '_Generated by Blackbox migration. Edit to match your vault structure._\n',
+      '## Knowledge',
+      '- [Imported Knowledge](imported-knowledge.md) — Migrated from previous AI memory',
+      '',
+      '## Preferences',
+      '_(Add your preference files here)_',
+      '',
+      '## Reference',
+      '_(Add your reference files here)_',
+    ];
+    writeFileSync(indexPath, lines.join('\n') + '\n', 'utf-8');
+  }
+  results.push(indexResult);
+
+  return results;
+}
+
+// ── CLI ────────────────────────────────────────────────────────────
+
+const program = new Command()
+  .name('migrate')
+  .description('Migrate memory files from other AI systems to Blackbox vault')
+  .option('--source <path>', 'Source memory directory')
+  .option('--vault <path>', 'Target vault directory')
+  .option('--execute', 'Actually perform migration (default is dry-run)')
+  .parse();
+
+const opts = program.opts();
+const sourceDir = opts.source;
+const vaultRoot = resolveVault(opts.vault);
+const dryRun = !opts.execute;
+
+if (!sourceDir) {
+  console.error('Error: --source is required');
+  process.exit(1);
+}
+
+if (!existsSync(sourceDir)) {
+  console.error(`Error: source directory does not exist: ${sourceDir}`);
+  process.exit(1);
+}
+
+console.log(`\n${dryRun ? 'DRY RUN' : 'EXECUTING'} — Migration`);
+console.log(`  Source: ${sourceDir}`);
+console.log(`  Target: ${vaultRoot}\n`);
+
+if (!dryRun) {
+  ensureDir(vaultRoot);
+  ensureDir(join(vaultRoot, 'Sessions'));
+}
+
+const allResults: MigrationResult[] = [];
+
+// Migrate index file first (special handling)
+const memoryMdPath = join(sourceDir, 'MEMORY.md');
+if (existsSync(memoryMdPath)) {
+  const memResults = migrateMemoryIndex(memoryMdPath, vaultRoot, dryRun);
+  allResults.push(...memResults);
+}
+
+// Migrate individual files
+const sourceFiles = readdirSync(sourceDir).filter(f => f.endsWith('.md') && f !== 'MEMORY.md');
+for (const file of sourceFiles) {
+  const name = file.replace(/\.md$/, '');
+  const rule = MIGRATION_MAP[name];
+  if (!rule) {
+    allResults.push({ source: file, destination: '(unmapped)', status: 'skipped', reason: 'no mapping rule — add to MIGRATION_MAP' });
+    continue;
+  }
+  const result = migrateFile(join(sourceDir, file), vaultRoot, rule, dryRun);
+  allResults.push(result);
+}
+
+// Report
+console.log('Results:');
+const maxSrc = Math.max(...allResults.map(r => r.source.length));
+for (const r of allResults) {
+  const icon = r.status === 'migrated' ? '  +' : r.status === 'skipped' ? '  ~' : '  !';
+  const reason = r.reason ? ` (${r.reason})` : '';
+  console.log(`${icon} ${r.source.padEnd(maxSrc)} → ${r.destination}${reason}`);
+}
+
+const migrated = allResults.filter(r => r.status === 'migrated').length;
+const skipped = allResults.filter(r => r.status === 'skipped').length;
+const errors = allResults.filter(r => r.status === 'error').length;
+console.log(`\n  ${migrated} migrated, ${skipped} skipped, ${errors} errors`);
+
+if (dryRun) {
+  console.log('\n  Run with --execute to apply changes.');
+}

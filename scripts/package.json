@@ -1,0 +1,21 @@
+{
+  "name": "blackbox",
+  "version": "0.1.0",
+  "description": "Provider-agnostic AI memory system. Own your context.",
+  "license": "MIT",
+  "repository": "https://github.com/vj-bunbun/blackbox",
+  "type": "module",
+  "scripts": {
+    "context": "bun run context.ts",
+    "session": "bun run session.ts",
+    "consolidate": "bun run consolidate.ts",
+    "migrate": "bun run migrate.ts"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
