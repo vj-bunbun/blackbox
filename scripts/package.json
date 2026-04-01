@@ -10,7 +10,9 @@
     "context": "bun run context.ts",
     "session": "bun run session.ts",
     "consolidate": "bun run consolidate.ts",
-    "migrate": "bun run migrate.ts"
+    "migrate": "bun run migrate.ts",
+    "audit": "bun run audit.ts",
+    "tidy": "bun run tidy.ts"
   },
   "dependencies": {
     "commander": "^13.1.0",
