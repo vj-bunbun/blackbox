@@ -16,7 +16,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { resolveVault, discoverKnowledgeFiles, vaultPaths, findOpenSession } from './lib/vault.js';
 import { parseFile, type KnowledgeFrontmatter } from './lib/frontmatter.js';
-import { scoreFile, rankFiles, type ScoredFile } from './lib/relevance.js';
+import { scoreFile, rankFiles, buildFrequencyMap, getLastSession, type ScoredFile } from './lib/relevance.js';
 import { estimateTokens, getDefaultBudget, truncateToFit, type Provider } from './lib/tokens.js';
 
 // ── CLI ────────────────────────────────────────────────────────────
@@ -57,13 +57,16 @@ if (!quiet) {
 
 // ── Discover and score files ───────────────────────────────────────
 
+// Build frequency map from sessions — topics mentioned across sessions score higher
+const frequencyMap = buildFrequencyMap(vaultRoot);
+
 const files = discoverKnowledgeFiles(vaultRoot);
 const scored: ScoredFile[] = [];
 
 for (const file of files) {
   try {
     const parsed = parseFile(file.path);
-    const score = scoreFile(parsed.data, parsed.content, { domain, tags });
+    const score = scoreFile(parsed.data, parsed.content, { domain, tags, frequencyMap });
     scored.push({
       ...file,
       data: parsed.data,
@@ -126,7 +129,21 @@ function addSection(title: string, files: ScoredFile[]): void {
   }
 }
 
-// Preferences always first (highest priority)
+// Last session first — "where I left off"
+const lastSession = getLastSession(vaultRoot);
+if (lastSession) {
+  const sessionHeader = `\n## Where You Left Off\n`;
+  const sessionTokens = estimateTokens(sessionHeader + lastSession.block, provider);
+  if (usedTokens + sessionTokens <= budget) {
+    sections.push(sessionHeader + lastSession.block + '\n');
+    usedTokens += sessionTokens;
+    if (!quiet) {
+      console.log(`  Last session: ${lastSession.filename}`);
+    }
+  }
+}
+
+// Preferences always next (highest priority knowledge)
 addSection('Preferences', preferences);
 
 // Project knowledge
