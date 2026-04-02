@@ -157,6 +157,22 @@ The app uses a three-layer architecture with caching at the edge...
 | Data ownership | 100% yours | Read the ToS |
 | Cost | Free forever | Bundled into subscription |
 
+### Works with Claude Code's Memory
+
+Claude Code has built-in auto-memory (`~/.claude/projects/*/memory/`). The two systems complement each other:
+
+- **Claude Code auto-memory** captures conversation patterns automatically — what you corrected, what worked, user preferences
+- **Blackbox** holds curated project knowledge — architecture, decisions, aesthetic guides, debugging lessons
+
+Claude Code's memory is tied to Claude Code. Blackbox vault files work with any AI. Use both: Claude Code for session-level learning, Blackbox for durable knowledge that survives provider switches.
+
+Write directly to Claude Code's system prompt:
+
+```bash
+bun run context.ts --output ~/my-project/CLAUDE.md
+# Every new Claude Code conversation now has your vault context
+```
+
 ## Integrations
 
 ### How the scripts find your vault

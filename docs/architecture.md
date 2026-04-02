@@ -57,6 +57,32 @@ The `--vault` flag lets you point any script at any vault. Keep work and persona
 5. **Sessions are append-only** — history is never rewritten
 6. **Deterministic scripts** — no AI in the pipeline, works offline, costs nothing
 
+## How It Fits with Claude Code
+
+Claude Code (Anthropic's CLI agent) has its own memory and context systems. Understanding the overlap helps you use both effectively.
+
+### Claude Code's Built-in Memory
+Claude Code writes auto-memory files to `~/.claude/projects/<hash>/memory/` with YAML frontmatter (types: user, feedback, project, reference). These are auto-generated from conversations and loaded into every session's system prompt.
+
+**Blackbox complements this** — it handles durable project knowledge that you curate deliberately, while Claude Code's auto-memory captures conversation-level patterns. The two coexist without conflict.
+
+### Claude Code's Context Compression
+Claude Code has three mid-session compression strategies: `autoCompact` (summarize old messages), `snipCompact` (trim stale markers), and `contextCollapse` (restructure). These kick in when the conversation grows too long.
+
+**Blackbox operates upstream** — audit and tidy compress your vault *before* it enters the context window. This means less pressure on Claude Code's mid-session compaction, leaving more room for actual work.
+
+### CLAUDE.md Integration
+Claude Code loads `CLAUDE.md` files from your working directory on every conversation start. When you run:
+
+```bash
+bun run context.ts --output ~/my-project/CLAUDE.md
+```
+
+Blackbox writes directly into Claude Code's system prompt pipeline. Every new conversation automatically has your vault context — no clipboard paste needed.
+
+### Provider Independence
+Claude Code's memory is tied to Claude Code. If you switch to ChatGPT, Gemini, Cursor, or any other tool, Claude Code's auto-memory doesn't follow. Blackbox vault files are plain markdown — any AI that can read files picks up where the last one left off.
+
 ## File Format
 
 Every knowledge file uses this structure:
